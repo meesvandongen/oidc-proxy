@@ -6,6 +6,7 @@
     "dev": "bun run --watch src/index.ts"
   },
   "dependencies": {
+    "@biomejs/biome": "^1.9.3",
     "elysia": "latest"
   },
   "devDependencies": {
