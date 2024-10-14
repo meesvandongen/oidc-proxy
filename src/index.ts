@@ -42,9 +42,9 @@ const app = new Elysia()
 	}))
 	.post(endpoints.token, ({ body }) => {
     switch(body.grant_type) {
-      case "authorization_code":
-        return {
-          access
+      case "authorization_code": {
+				
+			}
     }
 
     return {}

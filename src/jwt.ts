@@ -1,71 +1,30 @@
 import {
-	arrayBufferToBase64Url,
-	base64UrlToArrayBuffer,
+	base64UrlToBytes,
+	bytesToBase64Url,
 	decodePayload,
-	textToArrayBuffer,
-	textToBase64Url,
+	jsonToBase64Url,
+	textToBytes,
 } from "./utils";
 
-export interface SubtleCryptoImportKeyAlgorithm {
-	name: string;
-	hash?: string;
-	length?: number;
-	namedCurve?: string;
-	compressed?: boolean;
-}
-
-/**
- * @typedef JwtAlgorithm
- * @type {"ES256" | "ES384" | "ES512" | "HS256" | "HS384" | "HS512" | "RS256" | "RS384" | "RS512"}
- */
-export type JwtAlgorithm =
-	| "ES256"
-	| "ES384"
-	| "ES512"
-	| "HS256"
-	| "HS384"
-	| "HS512"
-	| "RS256"
-	| "RS384"
-	| "RS512";
-
-/**
- * @typedef JwtAlgorithms
- */
-export type JwtAlgorithms = {
-	[key: string]: SubtleCryptoImportKeyAlgorithm;
+const algorithms = {
+	ES256: { name: "ECDSA", namedCurve: "P-256", hash: "SHA-256" },
+	ES384: { name: "ECDSA", namedCurve: "P-384", hash: "SHA-384" },
+	ES512: { name: "ECDSA", namedCurve: "P-521", hash: "SHA-512" },
+	HS256: { name: "HMAC", hash: "SHA-256" },
+	HS384: { name: "HMAC", hash: "SHA-384" },
+	HS512: { name: "HMAC", hash: "SHA-512" },
+	RS256: { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+	RS384: { name: "RSASSA-PKCS1-v1_5", hash: "SHA-384" },
+	RS512: { name: "RSASSA-PKCS1-v1_5", hash: "SHA-512" },
 };
 
-/**
- * @typedef JwtHeader
- * @prop {string} [typ] Type
- */
-export type JwtHeader<T = Record<string, never>> = {
-	/**
-	 * Type (default: `"JWT"`)
-	 *
-	 * @default "JWT"
-	 */
-	typ?: string;
+export type JwtAlgorithm = keyof typeof algorithms;
 
-	/**
-	 * Algorithm (default: `"HS256"`)
-	 *
-	 * @default "HS256"
-	 */
-	alg?: JwtAlgorithm;
-} & T;
+export interface JwtHeader {
+	typ: "JWT";
+	alg: JwtAlgorithm;
+}
 
-/**
- * @typedef JwtPayload
- * @prop {string} [iss] Issuer
- * @prop {string} [sub] Subject
- * @prop {string | string[]} [aud] Audience
- * @prop {string} [exp] Expiration Time
- * @prop {string} [nbf] Not Before
- * @prop {string} [iat] Issued At
- * @prop {string} [jti] JWT ID
- */
 export type JwtPayload<T = Record<string, never>> = {
 	/** Issuer */
 	iss?: string;
@@ -89,207 +48,127 @@ export type JwtPayload<T = Record<string, never>> = {
 	jti?: string;
 } & T;
 
-/**
- * @typedef JwtOptions
- * @prop {JwtAlgorithm | string} algorithm
- */
-export type JwtOptions = {
-	algorithm?: JwtAlgorithm | string;
-};
-
-/**
- * @typedef JwtSignOptions
- * @extends JwtOptions
- * @prop {JwtHeader} [header]
- */
-export type JwtSignOptions<T> = {
-	header?: JwtHeader<T>;
-} & JwtOptions;
-
-/**
- * @typedef JwtVerifyOptions
- * @extends JwtOptions
- * @prop {boolean} [throwError=false] If `true` throw error if checks fail. (default: `false`)
- */
-export type JwtVerifyOptions = {
+export interface JwtVerifyOptions {
+	algorithm?: JwtAlgorithm;
 	/**
 	 * If `true` throw error if checks fail. (default: `false`)
 	 *
 	 * @default false
 	 */
 	throwError?: boolean;
-} & JwtOptions;
+}
 
-/**
- * @typedef JwtData
- * @prop {JwtHeader} header
- * @prop {JwtPayload} payload
- */
-export type JwtData<
-	Payload = Record<string, never>,
-	Header = Record<string, never>,
-> = {
-	header?: JwtHeader<Header>;
+export interface JwtData<Payload = Record<string, never>> {
+	header?: JwtHeader;
 	payload?: JwtPayload<Payload>;
-};
-
-const algorithms: JwtAlgorithms = {
-	ES256: { name: "ECDSA", namedCurve: "P-256", hash: "SHA-256" },
-	ES384: { name: "ECDSA", namedCurve: "P-384", hash: "SHA-384" },
-	ES512: { name: "ECDSA", namedCurve: "P-521", hash: "SHA-512" },
-	HS256: { name: "HMAC", hash: "SHA-256" },
-	HS384: { name: "HMAC", hash: "SHA-384" },
-	HS512: { name: "HMAC", hash: "SHA-512" },
-	RS256: { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-	RS384: { name: "RSASSA-PKCS1-v1_5", hash: "SHA-384" },
-	RS512: { name: "RSASSA-PKCS1-v1_5", hash: "SHA-512" },
-};
+}
 
 /**
  * Signs a payload and returns the token
- *
- * @param payload The payload object. To use `nbf` (Not Before) and/or `exp` (Expiration Time) add `nbf` and/or `exp` to the payload.
- * @param secret A string which is used to sign the payload.
- * @param [options={ algorithm: "HS256", header: { typ: "JWT" } }] The options object or the algorithm.
- * @throws If there"s a validation issue.
- * @returns Returns token as a `string`.
  */
-export async function sign<
-	Payload = Record<string, never>,
-	Header = Record<string, never>,
->(
+export async function sign<Payload = Record<string, never>>(
 	payload: JwtPayload<Payload>,
-	secret: JsonWebKey,
-	options: JwtSignOptions<Header>,
+	jwk: JsonWebKey,
+	alg: JwtAlgorithm = "HS256",
 ): Promise<string> {
-	const _options = {
-		algorithm: "HS256",
-		header: { typ: "JWT", ...(options.header ?? {}) } as JwtHeader<Header>,
-		...options,
-	};
+	const headerString = jsonToBase64Url({
+		typ: "JWT",
+		alg,
+	});
+	const payloadString = jsonToBase64Url({
+		iat: Math.floor(Date.now() / 1000),
+		...payload,
+	});
 
-	const algorithm: SubtleCryptoImportKeyAlgorithm =
-		algorithms[_options.algorithm];
+	const partialToken = `${headerString}.${payloadString}`;
 
-	if (!algorithm) throw new Error("algorithm not found");
+	const algorithm = algorithms[alg];
 
-	if (!payload.iat) {
-		payload.iat = Math.floor(Date.now() / 1000);
-	}
-
-	const partialToken = `${textToBase64Url(JSON.stringify({ ..._options.header, alg: _options.algorithm }))}.${textToBase64Url(JSON.stringify(payload))}`;
-
-	const key = await crypto.subtle.importKey("jwk", secret, algorithm, true, [
+	const key = await crypto.subtle.importKey("jwk", jwk, algorithm, true, [
 		"sign",
 	]);
-	const signature = await crypto.subtle.sign(
+
+	const signed = await crypto.subtle.sign(
 		algorithm,
 		key,
-		textToArrayBuffer(partialToken),
+		textToBytes(partialToken),
 	);
 
-	return `${partialToken}.${arrayBufferToBase64Url(signature)}`;
+	return `${partialToken}.${bytesToBase64Url(new Uint8Array(signed))}`;
 }
 
 /**
  * Verifies the integrity of the token and returns a boolean value.
- *
- * @param token The token string generated by `sign()`.
- * @param secret The string which was used to sign the payload.
- * @param options The options object or the algorithm.
- * @throws Throws integration errors and if `options.throwError` is set to `true` also throws `NOT_YET_VALID`, `EXPIRED` or `INVALID_SIGNATURE`.
- * @returns Returns the decoded token or `undefined`.
  */
-export async function verify<
-	Payload = Record<string, never>,
-	Header = Record<string, never>,
->(
+export async function verify<Payload = Record<string, never>>(
 	token: string,
-	secret: JsonWebKey,
-	_options: JwtVerifyOptions,
-): Promise<JwtData<Payload, Header> | undefined> {
-	const options = {
-		algorithm: "HS256",
-		throwError: false,
-		..._options,
-	} satisfies JwtVerifyOptions;
-
+	jwk: JsonWebKey,
+	alg: JwtAlgorithm = "HS256",
+): Promise<JwtData<Payload>> {
 	const tokenParts = token.split(".");
 
 	if (tokenParts.length !== 3) {
 		throw new Error("token must consist of 3 parts");
 	}
 
-	const algorithm: SubtleCryptoImportKeyAlgorithm =
-		algorithms[options.algorithm];
+	const algorithm = algorithms[alg];
 
-	if (!algorithm) {
-		throw new Error("algorithm not found");
+	const decodedToken = decode<Payload>(token);
+
+	if (decodedToken.header?.alg !== alg) {
+		throw new Error("INVALID_SIGNATURE");
 	}
 
-	const decodedToken = decode<Payload, Header>(token);
-
-	try {
-		if (decodedToken.header?.alg !== options.algorithm)
-			throw new Error("INVALID_SIGNATURE");
-
-		if (decodedToken.payload) {
-			const now = Math.floor(Date.now() / 1000);
-
-			if (
-				decodedToken.payload.nbf &&
-				decodedToken.payload.nbf > now &&
-				decodedToken.payload.nbf - now > 0
-			) {
-				throw new Error("NOT_YET_VALID");
-			}
-
-			if (
-				decodedToken.payload.exp &&
-				decodedToken.payload.exp <= now &&
-				now - decodedToken.payload.exp > 0
-			) {
-				throw new Error("EXPIRED");
-			}
-		}
-
-		const key = await crypto.subtle.importKey("jwk", secret, algorithm, true, [
-			"verify",
-		]);
+	if (decodedToken.payload) {
+		const now = Math.floor(Date.now() / 1000);
 
 		if (
-			!(await crypto.subtle.verify(
-				algorithm,
-				key,
-				base64UrlToArrayBuffer(tokenParts[2]),
-				textToArrayBuffer(`${tokenParts[0]}.${tokenParts[1]}`),
-			))
+			decodedToken.payload.nbf &&
+			decodedToken.payload.nbf > now &&
+			decodedToken.payload.nbf - now > 0
 		) {
-			throw new Error("INVALID_SIGNATURE");
+			throw new Error("NOT_YET_VALID");
 		}
 
-		return decodedToken;
-	} catch (err) {
-		if (options.throwError) {
-			throw err;
+		if (
+			decodedToken.payload.exp &&
+			decodedToken.payload.exp <= now &&
+			now - decodedToken.payload.exp > 0
+		) {
+			throw new Error("EXPIRED");
 		}
-
-		return;
 	}
+
+	const key = await crypto.subtle.importKey("jwk", jwk, algorithm, true, [
+		"verify",
+	]);
+
+	const isValid = await crypto.subtle.verify(
+		algorithm,
+		key,
+		base64UrlToBytes(tokenParts[2]),
+		textToBytes(`${tokenParts[0]}.${tokenParts[1]}`),
+	);
+
+	if (!isValid) {
+		throw new Error("INVALID_SIGNATURE");
+	}
+
+	return decodedToken;
 }
 
 /**
- * Returns the payload **without** verifying the integrity of the token. Please use `verify()` first to keep your application secure!
+ * Returns the payload **without** verifying the integrity of the token. Please
+ * use `verify()` first to keep your application secure!
  *
  * @param token The token string generated by `sign()`.
  * @returns Returns an `object` containing `header` and `payload`.
  */
-export function decode<
-	Payload = Record<string, never>,
-	Header = Record<string, never>,
->(token: string): JwtData<Payload, Header> {
+export function decode<Payload = Record<string, never>>(
+	token: string,
+): JwtData<Payload> {
 	return {
-		header: decodePayload<JwtHeader<Header>>(
+		header: decodePayload<JwtHeader>(
 			token.split(".")[0].replace(/-/g, "+").replace(/_/g, "/"),
 		),
 		payload: decodePayload<JwtPayload<Payload>>(

@@ -16,29 +16,27 @@ export function byteStringToBytes(byteStr: string): Uint8Array {
 	return bytes;
 }
 
-export function arrayBufferToBase64String(
-	arrayBuffer: ArrayBufferLike,
-): string {
-	return btoa(bytesToByteString(new Uint8Array(arrayBuffer)));
+export function bytesToBase64String(bytes: Uint8Array): string {
+	return btoa(bytesToByteString(bytes));
 }
 
-export function base64StringToArrayBuffer(b64str: string): BufferSource {
-	return byteStringToBytes(atob(b64str)).buffer;
+export function base64StringToBytes(b64str: string): Uint8Array {
+	return byteStringToBytes(atob(b64str));
 }
 
-export function textToArrayBuffer(str: string): Uint8Array {
+export function textToBytes(str: string): Uint8Array {
 	return byteStringToBytes(str);
 }
 
-export function arrayBufferToBase64Url(arrayBuffer: ArrayBufferLike): string {
-	return arrayBufferToBase64String(arrayBuffer)
+export function bytesToBase64Url(bytes: Uint8Array): string {
+	return bytesToBase64String(bytes)
 		.replace(/=/g, "")
 		.replace(/\+/g, "-")
 		.replace(/\//g, "_");
 }
 
-export function base64UrlToArrayBuffer(b64url: string): BufferSource {
-	return base64StringToArrayBuffer(
+export function base64UrlToBytes(b64url: string): Uint8Array {
+	return base64StringToBytes(
 		b64url.replace(/-/g, "+").replace(/_/g, "/").replace(/\s/g, ""),
 	);
 }
@@ -52,6 +50,10 @@ export function textToBase64Url(str: string): string {
 		.replace(/=/g, "")
 		.replace(/\+/g, "-")
 		.replace(/\//g, "_");
+}
+
+export function jsonToBase64Url(json: Record<string, unknown>): string {
+	return textToBase64Url(JSON.stringify(json));
 }
 
 export function decodePayload<T = Record<string, unknown>>(
