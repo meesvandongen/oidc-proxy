@@ -1,9 +1,9 @@
 import {
 	base64UrlToBytes,
+	bytesStringToBytes,
 	bytesToBase64Url,
 	decodePayload,
 	jsonToBase64Url,
-	textToBytes,
 } from "./utils";
 
 const algorithms = {
@@ -48,7 +48,7 @@ export type JwtPayload<T = Record<string, unknown>> = {
 	jti?: string;
 } & T;
 
-export interface JwtData<Payload = Record<string, never>> {
+export interface JwtData<Payload = Record<string, unknown>> {
 	header?: JwtHeader;
 	payload?: JwtPayload<Payload>;
 }
@@ -56,7 +56,7 @@ export interface JwtData<Payload = Record<string, never>> {
 /**
  * Signs a payload and returns the token
  */
-export async function sign<Payload = Record<string, never>>(
+export async function sign<Payload = Record<string, unknown>>(
 	payload: JwtPayload<Payload>,
 	jwk: JsonWebKey,
 	alg: JwtAlgorithm = "HS256",
@@ -85,7 +85,7 @@ export async function sign<Payload = Record<string, never>>(
 	const signed = await crypto.subtle.sign(
 		algorithm,
 		key,
-		textToBytes(partialToken),
+		bytesStringToBytes(partialToken),
 	);
 
 	return `${partialToken}.${bytesToBase64Url(new Uint8Array(signed))}`;
@@ -94,7 +94,7 @@ export async function sign<Payload = Record<string, never>>(
 /**
  * Verifies the integrity of the token and returns a boolean value.
  */
-export async function verify<Payload = Record<string, never>>(
+export async function verify<Payload = Record<string, unknown>>(
 	token: string,
 	jwk: JsonWebKey,
 	alg: JwtAlgorithm = "HS256",
@@ -141,7 +141,7 @@ export async function verify<Payload = Record<string, never>>(
 		algorithm,
 		key,
 		base64UrlToBytes(tokenParts[2]),
-		textToBytes(`${tokenParts[0]}.${tokenParts[1]}`),
+		bytesStringToBytes(`${tokenParts[0]}.${tokenParts[1]}`),
 	);
 
 	if (!isValid) {
@@ -155,7 +155,7 @@ export async function verify<Payload = Record<string, never>>(
  * Returns the payload **without** verifying the integrity of the token. Please
  * use `verify()` first to keep your application secure!
  */
-export function decode<Payload = Record<string, never>>(
+export function decode<Payload = Record<string, unknown>>(
 	token: string,
 ): JwtData<Payload> {
 	return {

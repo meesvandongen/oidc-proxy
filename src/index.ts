@@ -1,3 +1,4 @@
+import { cors } from "@elysiajs/cors";
 import { Elysia, t } from "elysia";
 import { parseBasicAuth } from "./basic-auth";
 import { privateJwk, publicJwk } from "./jwks";
@@ -17,6 +18,7 @@ const endpoints = {
 const issuer = "http://localhost:3000";
 
 const app = new Elysia()
+	.use(cors())
 	.decorate("publicJwk", publicJwk)
 	.decorate("privateJwk", privateJwk)
 	.derive(({ headers }) => ({

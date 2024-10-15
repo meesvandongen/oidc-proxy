@@ -7,10 +7,12 @@
 	},
 	"dependencies": {
 		"@biomejs/biome": "^1.9.3",
+		"@elysiajs/cors": "^1.1.1",
 		"elysia": "latest"
 	},
 	"devDependencies": {
-		"bun-types": "latest"
+		"bun-types": "latest",
+		"fast-check": "^3.22.0"
 	},
 	"module": "src/index.js"
 }
