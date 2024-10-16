@@ -110,6 +110,7 @@ const app = new Elysia()
 						nonces.value = nonces.value.filter(
 							(nonce) => nonce.code !== body.code,
 						);
+						nonces.sameSite = "none";
 					}
 				}
 
