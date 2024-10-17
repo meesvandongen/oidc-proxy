@@ -4,20 +4,14 @@ import { parseBasicAuth } from "./basic-auth";
 import { privateJwk, publicJwk } from "./jwks";
 import { type JwtPayload, sign } from "./jwt";
 
-const endpoints = {
-	wellKnownDocument: "/.well-known/openid-configuration",
-	token: "/token",
-	jwks: "/jwks",
-	authorize: "/authorize",
-	userinfo: "/userinfo",
-	revoke: "/revoke",
-	endSession: "/endsession",
-	introspect: "/introspect",
-};
 
 const issuer = "http://localhost:3000";
 
-const app = new Elysia()
+const app = new Elysia({
+	serve: {
+		port: 3001,
+	}
+})
 	.use(cors())
 	.decorate("publicJwk", publicJwk)
 	.decorate("privateJwk", privateJwk)
@@ -27,13 +21,13 @@ const app = new Elysia()
 	.derive(({ headers }) => ({
 		bearer: headers.authorization?.split(" ")[1],
 	}))
-	.get(endpoints.wellKnownDocument, ({ server }) => ({
+	.get("/.well-known/openid-configuration", () => ({
 		issuer: issuer,
-		token_endpoint: `${issuer}/${endpoints.token}`,
-		authorization_endpoint: `${issuer}${endpoints.authorize}`,
-		userinfo_endpoint: `${issuer}${endpoints.userinfo}`,
+		token_endpoint: `${issuer}/token`,
+		authorization_endpoint: `${issuer}/authorize`,
+		userinfo_endpoint: `${issuer}/userinfo`,
 		token_endpoint_auth_methods_supported: ["none"],
-		jwks_uri: `${issuer}${endpoints.jwks}`,
+		jwks_uri: `${issuer}/jwks`,
 		response_types_supported: ["code"],
 		grant_types_supported: [
 			"client_credentials",
@@ -44,16 +38,16 @@ const app = new Elysia()
 		token_endpoint_auth_signing_alg_values_supported: ["RS256"],
 		response_modes_supported: ["query"],
 		id_token_signing_alg_values_supported: ["RS256"],
-		revocation_endpoint: `${issuer}${endpoints.revoke}`,
+		revocation_endpoint: `${issuer}/revoke`,
 		subject_types_supported: ["public"],
-		end_session_endpoint: `${issuer}${endpoints.endSession}`,
-		introspection_endpoint: `${issuer}${endpoints.introspect}`,
+		end_session_endpoint: `${issuer}/endsession`,
+		introspection_endpoint: `${issuer}/introspect`,
 	}))
-	.get(endpoints.jwks, () => ({
+	.get("/jwks", () => ({
 		keys: [publicJwk],
 	}))
 	.post(
-		endpoints.token,
+		"/token",
 		async ({ body, error, basicAuth, cookie: { nonces } }) => {
 			const payload: JwtPayload = {
 				scope: body.scope,
@@ -134,7 +128,7 @@ const app = new Elysia()
 		},
 	)
 	.get(
-		endpoints.authorize,
+		"/authorize",
 		({
 			query: { redirect_uri, response_type, nonce, state },
 			cookie,
@@ -181,7 +175,7 @@ const app = new Elysia()
 		},
 	)
 	.get(
-		endpoints.userinfo,
+		"/userinfo",
 		() => ({
 			sub: "johndoe",
 			name: "John Doe",
@@ -193,7 +187,7 @@ const app = new Elysia()
 		},
 	)
 	.post(
-		endpoints.revoke,
+		"/revoke",
 		() => {
 			return {};
 		},
@@ -204,7 +198,7 @@ const app = new Elysia()
 		},
 	)
 	.get(
-		endpoints.endSession,
+		"/endsession",
 		({ query: { post_logout_redirect_uri }, redirect }) => {
 			return redirect(post_logout_redirect_uri);
 		},
@@ -215,7 +209,7 @@ const app = new Elysia()
 		},
 	)
 	.post(
-		endpoints.introspect,
+		"/introspect",
 		() => {
 			return {
 				active: true,
