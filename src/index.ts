@@ -4,13 +4,12 @@ import { parseBasicAuth } from "./basic-auth";
 import { privateJwk, publicJwk } from "./jwks";
 import { type JwtPayload, sign } from "./jwt";
 
-
-const issuer = "http://localhost:3000";
+const issuer = "http://localhost:4220";
 
 const app = new Elysia({
 	serve: {
-		port: 3001,
-	}
+		port: 4220,
+	},
 })
 	.use(cors())
 	.decorate("publicJwk", publicJwk)
@@ -98,10 +97,10 @@ const app = new Elysia({
 				};
 
 				if (body.code !== undefined) {
-					const nonce = nonces.value.find((nonce) => nonce.code === body.code);
+					const nonce = nonces.value?.find((nonce) => nonce.code === body.code);
 					if (nonce) {
 						idTokenPayload.nonce = nonce.value;
-						nonces.value = nonces.value.filter(
+						nonces.value = (nonces.value ?? []).filter(
 							(nonce) => nonce.code !== body.code,
 						);
 						nonces.sameSite = "none";
@@ -124,7 +123,9 @@ const app = new Elysia({
 				username: t.Optional(t.String()),
 			}),
 			cookie: t.Cookie({
-				nonces: t.Array(t.Object({ value: t.String(), code: t.String() })),
+				nonces: t.Optional(
+					t.Array(t.Object({ value: t.String(), code: t.String() })),
+				),
 			}),
 		},
 	)
@@ -141,7 +142,7 @@ const app = new Elysia({
 
 			if (response_type === "code") {
 				if (nonce !== undefined) {
-					cookie.nonces.value = cookie.nonces.value.concat({
+					cookie.nonces.value = (cookie.nonces.value ?? []).concat({
 						value: nonce,
 						code,
 					});
@@ -171,7 +172,9 @@ const app = new Elysia({
 				nonce: t.Optional(t.String()),
 			}),
 			cookie: t.Cookie({
-				nonces: t.Array(t.Object({ value: t.String(), code: t.String() })),
+				nonces: t.Optional(
+					t.Array(t.Object({ value: t.String(), code: t.String() })),
+				),
 			}),
 		},
 	)
@@ -222,7 +225,7 @@ const app = new Elysia({
 			}),
 		},
 	)
-	.listen(3000);
+	.listen({});
 
 console.log(
 	`🦊 Elysia is running at http://${app.server?.hostname}:${app.server?.port}`,
