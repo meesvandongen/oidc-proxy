@@ -1,8 +1,8 @@
-import type { ERedis } from "../redis";
+import type { Redis } from "../plugin-redis";
 import type { OIDCClientActiveSession } from "../types";
 
 export async function fetchSession(
-	redis: ERedis,
+	redis: Redis,
 	sessionId: string,
 ): Promise<OIDCClientActiveSession | null> {
 	const currentSession = await redis.get(sessionId);

@@ -1,10 +1,9 @@
 import Elysia from "elysia";
-import { Redis } from "ioredis";
-import type { RedisOptions } from "ioredis/built/index";
+import { type RedisOptions, Redis as _Redis } from "ioredis";
 import type { OIDCClientSession } from "./types";
 
-export const redis = (options?: RedisOptions) => {
-	const instance = new Redis({
+export function pluginRedis(options?: RedisOptions) {
+	const instance = new _Redis({
 		port: 6379,
 		host: "127.0.0.1",
 		...options,
@@ -34,16 +33,18 @@ export const redis = (options?: RedisOptions) => {
 		await instance.del(sessionId);
 	}
 
-	const eRedis: ERedis = {
+	const elysiaRedis: Redis = {
 		get,
 		set,
 		del,
 	};
 
-	return new Elysia().decorate("redis", eRedis);
-};
+	return new Elysia({
+		name: "redis",
+	}).decorate("redis", elysiaRedis);
+}
 
-export interface ERedis {
+export interface Redis {
 	get(sessionId: string): Promise<OIDCClientSession | null>;
 	set(session: OIDCClientSession): Promise<void>;
 	del(sessionId: string): Promise<void>;

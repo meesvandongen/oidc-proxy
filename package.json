@@ -8,15 +8,15 @@
 	"dependencies": {
 		"@elysiajs/cors": "^1.2.0",
 		"@elysiajs/opentelemetry": "^1.2.0",
-		"elysia": "^1.2.12",
+		"elysia": "^1.2.24",
 		"ioredis": "^5.5.0",
-		"jose": "^5.9.6",
-		"oauth4webapi": "^3.1.5",
-		"openid-client": "^6.1.7"
+		"jose": "^6.0.8",
+		"oauth4webapi": "^3.3.0",
+		"openid-client": "^6.3.3"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
-		"bun-types": "^1.2.2",
+		"bun-types": "^1.2.4",
 		"fast-check": "^3.23.2"
 	},
 	"module": "src/index.js"

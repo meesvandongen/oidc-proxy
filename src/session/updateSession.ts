@@ -2,11 +2,13 @@ import type {
 	TokenEndpointResponse,
 	TokenEndpointResponseHelpers,
 } from "openid-client";
-import type { ERedis } from "../redis";
+import type { Options } from "../options";
+import type { Redis } from "../plugin-redis";
 import type { OIDCClientActiveSession } from "../types";
 
 export async function updateSession(
-	redis: ERedis,
+	options: Options,
+	redis: Redis,
 	sessionId: string,
 	tokenSet: TokenEndpointResponse & TokenEndpointResponseHelpers,
 ): Promise<OIDCClientActiveSession | null> {
@@ -22,7 +24,8 @@ export async function updateSession(
 		}
 		const newSession: OIDCClientActiveSession = {
 			sessionId,
-			sessionExpiresAt: Date.now() + refreshExpiration,
+			sessionExpiresAt:
+				Date.now() + (options.refreshExpiration ?? 60 * 60 * 24 * 30 * 1000),
 			idToken: id_token,
 			accessToken: access_token,
 			refreshToken: refresh_token,
