@@ -2,12 +2,15 @@
 	"name": "oidc-mock-server",
 	"version": "1.0.50",
 	"scripts": {
-		"test": "bun test",
-		"dev": "bun run --watch src/index.ts"
+		"test": "vp test run",
+		"dev": "bun --watch src/index.ts",
+		"lint": "vp lint",
+		"fmt": "vp fmt"
 	},
 	"dependencies": {
 		"@elysiajs/cors": "^1.2.0",
 		"@elysiajs/opentelemetry": "^1.2.0",
+		"@sinclair/typebox": "^0.34.28",
 		"elysia": "^1.2.24",
 		"ioredis": "^5.5.0",
 		"jose": "^6.0.8",
@@ -15,9 +18,10 @@
 		"openid-client": "^6.3.3"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^1.9.4",
 		"bun-types": "^1.2.4",
-		"fast-check": "^3.23.2"
+		"fast-check": "^3.23.2",
+		"vite-plus": "catalog:"
 	},
-	"module": "src/index.js"
+	"module": "src/index.js",
+	"packageManager": "pnpm@12.15.0+sha512.b3951d6d6ff4a9f13dc7cf56cd28d2b8eb37dbcc9c68e52e1e1191873ea9f82a017287ab50baadc5ccc494f036c67c0e47eb13608c2fa36f47711b61ea128e61"
 }

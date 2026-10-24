@@ -1,12 +1,12 @@
-import { describe, expect, mock, test } from "bun:test";
 import type { Cookie } from "elysia";
+import { describe, expect, test, vi } from "vite-plus/test";
 import { extendCookieExpiration } from "./extendCookieExpiration";
 
 describe("extendCookieExpiration", () => {
 	test("Succeeded", () => {
 		const cookie = {
 			value: "value",
-			update: mock(),
+			update: vi.fn(),
 		} as unknown as Cookie<string | undefined>;
 
 		extendCookieExpiration(
@@ -27,9 +27,8 @@ describe("extendCookieExpiration", () => {
 
 	test("Skip", () => {
 		const cookie = {
-			session_id: {
-				update: mock(),
-			},
+			value: "value",
+			update: vi.fn(),
 		} as unknown as Cookie<string | undefined>;
 
 		extendCookieExpiration(
