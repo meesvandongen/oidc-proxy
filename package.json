@@ -9,7 +9,7 @@
 		"@elysiajs/cors": "^1.2.0",
 		"@elysiajs/opentelemetry": "^1.2.0",
 		"elysia": "^1.2.24",
-		"ioredis": "^5.5.0",
+		"ioredis": "^6.0.0",
 		"jose": "^6.0.8",
 		"oauth4webapi": "^3.3.0",
 		"openid-client": "^6.3.3"
